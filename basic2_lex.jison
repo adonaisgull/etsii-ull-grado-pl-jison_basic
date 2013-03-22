@@ -2,9 +2,19 @@
 
 %lex
 
+%%
+
+\s+							{ /* skip whitespace */ }
+[a-zA-Z_]\w*				{ return "ID"; }
+[0-9]+("."[0-9]+)?\b		{ yytext = Number(yytext); return "NUM"; }
+[;=]						{ return yytext; }
+.							{ return 'INVALID'; }
+
+/lex /* */
+
 %{
 
-tabla = new Array();
+var tabla = {};
 	
 hashToUl = function(hash) {
 	var result = "<ul>";
@@ -21,27 +31,18 @@ hashToUl = function(hash) {
 
 %%
 
-\s+                   { /* skip whitespace */ }
-[a-zA-Z_]\w*          { return "ID"; }
-[0-9]+("."[0-9]+)?\b  { return "NUM"; }
-[;=]		      { return yytext; }
+P   : 	S	{
+				return hashToUl(tabla);
+		 	}
+	;
 
-/lex
+S   : e 
+    | S ';' e
+	;
 
-/* operator associations a precedence */
-%left ';'
-
-%%
-
-s   : e { return hashToUl(tabla); }
+e   : { /* empty */ }
+    | 'ID' '=' 'NUM' { tabla[$1] = $$ = $3; }
+    | 'ID' '=' 'INVALID'	{
+								throw new Error('Se esperaba un número en la línea ' + (yy.lexer.yylineno + 1) + ":\n" + yy.lexer.showPosition() + '\n');
+							}
     ;
-
-e   : /* empty */
-    | e ';' e
-    | 'ID' '=' 'NUM' { tabla[$1] = $3; }
-    ;
-
-
-
-
-
